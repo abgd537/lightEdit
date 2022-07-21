@@ -58,7 +58,11 @@ object Screen : JFrame("lightEdit v1.0a")
                 }
 
                 if(text != originalText && !hasChangesMade)
+                {
                     hasChangesMade = true
+
+                    title += '*'
+                }
             }
 
             override fun keyReleased(e : KeyEvent)
