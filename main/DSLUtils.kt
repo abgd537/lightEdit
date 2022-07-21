@@ -25,7 +25,7 @@ object DSLUtils
     }
 
     fun Screen.open(target : JTextArea, fileChooser : JFileChooser) = with(fileChooser) {
-        if(target.text.isNotBlank() && hasChangesMade) {
+        if(hasChangesMade) {
             askForSavingCurrentState(this) { }
             target.text = ""
         }
@@ -85,7 +85,7 @@ object DSLUtils
 
 
     fun Screen.closeWith(fileChooser : JFileChooser) : Nothing = with(textArea) {
-        if(text.isNotBlank() && hasChangesMade)
+        if(hasChangesMade)
             askForSavingCurrentState(fileChooser) { }
 
         exitProcess(0)

@@ -81,7 +81,7 @@ object Screen : JFrame("lightEdit v1.0a")
         menuBar {
             menu("File", 'f') {
                 item("new") {
-                    if(textArea.text.isNotBlank() && hasChangesMade)
+                    if(hasChangesMade)
                         askForSavingCurrentState(fileChooser) { textArea.text = "" }
 
                     title = "untitled"
