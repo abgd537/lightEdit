@@ -1,14 +1,14 @@
 package main
 
-import main.DSLUtils.askForSavingCurrentState
-import main.DSLUtils.closeWith
+import main.DSLUtils.close
 import main.DSLUtils.copyTo
+import main.DSLUtils.createFile
 import main.DSLUtils.cut
 import main.DSLUtils.item
-import main.DSLUtils.makeFile
 import main.DSLUtils.menu
 import main.DSLUtils.menuBar
-import main.DSLUtils.open
+import main.DSLUtils.openFile
+import main.DSLUtils.openNew
 import main.DSLUtils.pasteFrom
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -25,12 +25,10 @@ import kotlin.properties.Delegates
 
 object Screen : JFrame("lightEdit v1.0a")
 {
-    var hasChangesMade = false
-
     private val scrSize = Dimension(1080, 720)
     private val clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
-    private val fileChooser = JFileChooser().apply {
+    val fileChooser = JFileChooser().apply {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel")
         SwingUtilities.updateComponentTreeUI(this)
 
@@ -41,9 +39,7 @@ object Screen : JFrame("lightEdit v1.0a")
         var fontSize by Delegates.observable(13) { _, _, new ->
             font = Font(font.name, font.style, new)
         }
-
-        val originalText = text
-
+        
         addKeyListener(object : KeyAdapter() {
             private var zoomMode by Delegates.observable(false) { _, _, new ->
                 isEditable = !new
@@ -56,9 +52,6 @@ object Screen : JFrame("lightEdit v1.0a")
                     KeyEvent.VK_ADD -> if(zoomMode) fontSize = floor(fontSize * 1.11).toInt()
                     KeyEvent.VK_SUBTRACT -> if(zoomMode) fontSize = ceil(fontSize / 1.11).toInt()
                 }
-
-                if(text != originalText && !hasChangesMade)
-                    hasChangesMade = true
             }
 
             override fun keyReleased(e : KeyEvent)
@@ -70,6 +63,8 @@ object Screen : JFrame("lightEdit v1.0a")
 
         lineWrap = true
     }
+    
+    var originalText = ""
 
     @JvmStatic
     fun main(args : Array<String>)
@@ -80,16 +75,10 @@ object Screen : JFrame("lightEdit v1.0a")
 
         menuBar {
             menu("File", 'f') {
-                item("new") {
-                    if(hasChangesMade)
-                        askForSavingCurrentState(fileChooser) { textArea.text = "" }
-
-                    title = "untitled"
-                }
-
-                item("open") { open(textArea, fileChooser) }
-                item("save as") { makeFile(textArea, fileChooser) }
-                item("exit") { closeWith(fileChooser) }
+                item("new") { openNew() }
+                item("open") { openFile() }
+                item("save as") { createFile() }
+                item("exit") { close() }
             }
 
             menu("Edit", 'e') {
@@ -109,7 +98,7 @@ object Screen : JFrame("lightEdit v1.0a")
         defaultCloseOperation = DO_NOTHING_ON_CLOSE
 
         addWindowListener(object : WindowAdapter() {
-            override fun windowClosing(e: WindowEvent?) = closeWith(fileChooser)
+            override fun windowClosing(e: WindowEvent?) = close()
         })
 
         setLocationRelativeTo(null)

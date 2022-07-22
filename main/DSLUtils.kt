@@ -24,43 +24,56 @@ object DSLUtils
         jMenuBar = JMenuBar().apply(settings)
     }
 
-    fun Screen.open(target : JTextArea, fileChooser : JFileChooser) = with(fileChooser) {
-        if(hasChangesMade) {
-            askForSavingCurrentState(this) { }
-            target.text = ""
-        }
+    fun Screen.openNew()
+    {
+        askForSavingCurrentState { textArea.text = "" }
+        title = "untitled"
+        originalText = ""
+    }
 
-        if(showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
+    fun Screen.openFile() = with(fileChooser) {
+        askForSavingCurrentState { textArea.text = "" }
+
+        if(textArea.text.isEmpty() && showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
         {
             selectedFile.apply {
                 title = name
 
-                target.append(BufferedReader(FileReader(absolutePath)).run { readText().also { close() } })
+                textArea.append(BufferedReader(FileReader(absolutePath)).run { readText().also { close() } })
             }
 
-            hasChangesMade = false
+            originalText = textArea.text
         }
     }
 
-    fun Screen.makeFile(source : JTextArea, fileChooser : JFileChooser) = with(fileChooser) {
+    fun Screen.createFile() = with(fileChooser) {
         if(showSaveDialog(this) == JFileChooser.APPROVE_OPTION)
         {
             PrintWriter(BufferedWriter(FileWriter(selectedFile.absolutePath))).run {
-                write(source.text)
+                write(textArea.text)
                 close()
             }
 
-            hasChangesMade = false
+            title = selectedFile.name
+            originalText = textArea.text
         }
     }
 
-    fun Screen.askForSavingCurrentState(fileChooser : JFileChooser, actionOnCancel : () -> Unit)
+    fun Screen.close() =
+        askForSavingCurrentState { exitProcess(0) }
+
+    private inline fun Screen.askForSavingCurrentState(originalAction : () -> Unit)
     {
-        when(JOptionPane.showConfirmDialog(textArea, "저장하시겠습니까?", "저장", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE ))
+        if(textArea.text != originalText)
         {
-            0 -> makeFile(textArea, fileChooser)
-            1 -> actionOnCancel()
+            when(JOptionPane.showConfirmDialog(textArea, "저장하시겠습니까?", "저장", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE ))
+            {
+                0 -> createFile()
+                1 -> originalAction()
+            }
         }
+
+        else originalAction()
     }
 
     fun JTextArea.copyTo(clipboard: Clipboard) = StringSelection(selectedText).apply {
@@ -82,12 +95,4 @@ object DSLUtils
         {
             e.printStackTrace()
         }
-
-
-    fun Screen.closeWith(fileChooser : JFileChooser) : Nothing = with(textArea) {
-        if(hasChangesMade)
-            askForSavingCurrentState(fileChooser) { }
-
-        exitProcess(0)
-    }
 }
